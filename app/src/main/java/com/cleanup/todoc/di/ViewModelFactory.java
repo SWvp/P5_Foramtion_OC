@@ -12,9 +12,6 @@ import com.cleanup.todoc.ui.MainViewModel;
 
 import java.util.concurrent.Executor;
 
-/**
- * Created by stéphane Warin OCR on 14/05/2021.
- */
 
 public class ViewModelFactory implements ViewModelProvider.Factory{
 

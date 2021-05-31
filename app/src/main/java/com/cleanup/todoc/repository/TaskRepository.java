@@ -7,9 +7,6 @@ import com.cleanup.todoc.model.Task;
 
 import java.util.List;
 
-/**
- * Created by stéphane Warin OCR on 20/05/2021.
- */
 
 public class TaskRepository {
 

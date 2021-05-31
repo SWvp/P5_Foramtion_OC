@@ -11,9 +11,6 @@ import com.cleanup.todoc.model.Project;
 
 import java.util.List;
 
-/**
- * Created by stéphane Warin OCR on 20/05/2021.
- */
 
 @Dao
 public interface ProjectDao {

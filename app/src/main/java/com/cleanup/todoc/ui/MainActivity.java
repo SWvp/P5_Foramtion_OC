@@ -28,7 +28,6 @@ import com.cleanup.todoc.model.Project;
 import com.cleanup.todoc.model.Task;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -50,10 +49,12 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
     @NonNull
     private final ArrayList<Task> tasks = new ArrayList<>();
 
+    private final ArrayList<MainViewState> tasksMainViewState = new ArrayList<>();
+
     /**
      * The adapter which handles the list of tasks
      */
-    private final TasksAdapter adapter = new TasksAdapter(tasks, this);
+    private final TasksAdapter adapter = new TasksAdapter(tasksMainViewState, this);
 
     /**
      * The sort method to be used to display tasks
@@ -109,12 +110,12 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         listTasks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         listTasks.setAdapter(adapter);
 
-        ViewModelFactory myViewModelFactory = Injection.provideViewModelFactory(this);
-        this.mMainViewModel = new ViewModelProvider(this, myViewModelFactory).get(MainViewModel.class);
+        ViewModelFactory mViewModelFactory = Injection.provideViewModelFactory();
+        mMainViewModel = new ViewModelProvider(this, mViewModelFactory).get(MainViewModel.class);
 
-        mMainViewModel.getAllTask().observe(this, new Observer<List<Task>>() {
+        mMainViewModel.getAllTask().observe(this, new Observer<List<MainViewState>>() {
             @Override
-            public void onChanged(List<Task> tasks) {
+            public void onChanged(List<MainViewState> tasks) {
                 adapter.setTasks(tasks);
 
             }
@@ -137,27 +138,30 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
 
-        if (id == R.id.filter_alphabetical) {
-            sortMethod = SortMethod.ALPHABETICAL;
-        } else if (id == R.id.filter_alphabetical_inverted) {
-            sortMethod = SortMethod.ALPHABETICAL_INVERTED;
-        } else if (id == R.id.filter_oldest_first) {
-            sortMethod = SortMethod.OLD_FIRST;
-        } else if (id == R.id.filter_recent_first) {
-            sortMethod = SortMethod.RECENT_FIRST;
+        switch (item.getItemId()) {
+            case R.id.filter_alphabetical:
+                mMainViewModel.azSort(SortMethod.ALPHABETICAL);
+                return true;
+            case R.id.filter_alphabetical_inverted:
+                mMainViewModel.zaSort(SortMethod.ALPHABETICAL_INVERTED);
+                return true;
+            case R.id.filter_oldest_first:
+                mMainViewModel.oldFirstSort(SortMethod.OLD_FIRST);
+                return true;
+            case R.id.filter_recent_first:
+                mMainViewModel.recentFirstSort(SortMethod.RECENT_FIRST);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
         }
-
-        updateTasks();
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onDeleteTask(Task task) {
         mMainViewModel.deleteTask(task);
-        updateTasks();
+
     }
 
 
@@ -232,36 +236,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      */
     private void addTask(@NonNull Task task) {
         mMainViewModel.createTask(task);
-        updateTasks();
-    }
 
-    /**
-     * Updates the list of tasks in the UI
-     */
-    private void updateTasks() {
-        if (tasks.size() == 0) {
-            lblNoTasks.setVisibility(View.VISIBLE);
-            listTasks.setVisibility(View.GONE);
-        } else {
-            lblNoTasks.setVisibility(View.GONE);
-            listTasks.setVisibility(View.VISIBLE);
-            switch (sortMethod) {
-                case ALPHABETICAL:
-                    Collections.sort(tasks, new Task.TaskAZComparator());
-                    break;
-                case ALPHABETICAL_INVERTED:
-                    Collections.sort(tasks, new Task.TaskZAComparator());
-                    break;
-                case RECENT_FIRST:
-                    Collections.sort(tasks, new Task.TaskRecentComparator());
-                    break;
-                case OLD_FIRST:
-                    Collections.sort(tasks, new Task.TaskOldComparator());
-                    break;
-
-            }
-            adapter.updateTasks(tasks);
-        }
     }
 
     /**
@@ -318,29 +293,4 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         }
     }
 
-    /**
-     * List of all possible sort methods for task
-     */
-    private enum SortMethod {
-        /**
-         * Sort alphabetical by name
-         */
-        ALPHABETICAL,
-        /**
-         * Inverted sort alphabetical by name
-         */
-        ALPHABETICAL_INVERTED,
-        /**
-         * Lastly created first
-         */
-        RECENT_FIRST,
-        /**
-         * First created first
-         */
-        OLD_FIRST,
-        /**
-         * No sort
-         */
-        NONE
-    }
 }
