@@ -1,4 +1,4 @@
-package com.cleanup.todoc.ui;
+ package com.cleanup.todoc.ui;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -47,20 +47,12 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      * List of all current tasks of the application
      */
     @NonNull
-    private final ArrayList<Task> tasks = new ArrayList<>();
-
     private final ArrayList<MainViewState> tasksMainViewState = new ArrayList<>();
 
     /**
      * The adapter which handles the list of tasks
      */
     private final TasksAdapter adapter = new TasksAdapter(tasksMainViewState, this);
-
-    /**
-     * The sort method to be used to display tasks
-     */
-    @NonNull
-    private SortMethod sortMethod = SortMethod.NONE;
 
     /**
      * Dialog to create a new task
@@ -113,10 +105,11 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         ViewModelFactory mViewModelFactory = Injection.provideViewModelFactory();
         mMainViewModel = new ViewModelProvider(this, mViewModelFactory).get(MainViewModel.class);
 
-        mMainViewModel.getAllTask().observe(this, new Observer<List<MainViewState>>() {
+        mMainViewModel.getAllTaskLiveData().observe(this, new Observer<List<MainViewState>>() {
             @Override
             public void onChanged(List<MainViewState> tasks) {
                 adapter.setTasks(tasks);
+                noTaskUpdate(tasks);
 
             }
         });
@@ -129,7 +122,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         });
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.actions, menu);
@@ -141,16 +133,16 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
 
         switch (item.getItemId()) {
             case R.id.filter_alphabetical:
-                mMainViewModel.azSort(SortMethod.ALPHABETICAL);
+                mMainViewModel.sortMethod(SortMethod.ALPHABETICAL);
                 return true;
             case R.id.filter_alphabetical_inverted:
-                mMainViewModel.zaSort(SortMethod.ALPHABETICAL_INVERTED);
+                mMainViewModel.sortMethod(SortMethod.ALPHABETICAL_INVERTED);
                 return true;
             case R.id.filter_oldest_first:
-                mMainViewModel.oldFirstSort(SortMethod.OLD_FIRST);
+                mMainViewModel.sortMethod(SortMethod.OLD_FIRST);
                 return true;
             case R.id.filter_recent_first:
-                mMainViewModel.recentFirstSort(SortMethod.RECENT_FIRST);
+                mMainViewModel.sortMethod(SortMethod.RECENT_FIRST);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -158,13 +150,21 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
         }
     }
 
-    @Override
-    public void onDeleteTask(Task task) {
-        mMainViewModel.deleteTask(task);
-
+    private void noTaskUpdate(List<MainViewState> tasks) {
+        if (tasks.size() == 0) {
+            lblNoTasks.setVisibility(View.VISIBLE);
+            listTasks.setVisibility(View.GONE);
+        }else {
+            lblNoTasks.setVisibility(View.GONE);
+            listTasks.setVisibility(View.VISIBLE);
+        }
     }
 
+    @Override
+    public void onDeleteTask(MainViewState taskToDelete) {
+        mMainViewModel.deleteTask(taskToDelete);
 
+    }
 
     /**
      * Called when the user clicks on the positive button of the Create Task Dialog.
@@ -189,12 +189,9 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
             }
             // If both project and name of the task have been set
             else if (taskProject != null) {
-                // TODO: Replace this by id of persisted task
-                long id = (long) (Math.random() * 50000);
 
 
                 Task task = new Task(
-                        id,
                         taskProject.getId(),
                         taskName,
                         new Date().getTime()

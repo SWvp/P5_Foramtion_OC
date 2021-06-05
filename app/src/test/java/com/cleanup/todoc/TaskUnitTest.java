@@ -1,101 +1,161 @@
 package com.cleanup.todoc;
 
+import androidx.lifecycle.MutableLiveData;
+
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
+import androidx.lifecycle.MutableLiveData;
+
 import com.cleanup.todoc.model.Task;
+import com.cleanup.todoc.repository.ProjectRepository;
+import com.cleanup.todoc.repository.TaskRepository;
+import com.cleanup.todoc.ui.MainViewModel;
+import com.cleanup.todoc.ui.MainViewState;
+import com.cleanup.todoc.utils.LiveDataTestUtil;
 
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 
-/**
- * Unit tests for tasks
- *
- * @author Gaëtan HERFRAY
- */
 public class TaskUnitTest {
-    @Test
-    public void test_projects() {
-        final Task task1 = new Task(1, 1, "task 1", new Date().getTime());
-        final Task task2 = new Task(2, 2, "task 2", new Date().getTime());
-        final Task task3 = new Task(3, 3, "task 3", new Date().getTime());
-        final Task task4 = new Task(4, 4, "task 4", new Date().getTime());
 
-        assertEquals("Projet Tartampion", task1.getProject().getName());
-        assertEquals("Projet Lucidia", task2.getProject().getName());
-        assertEquals("Projet Circus", task3.getProject().getName());
-        assertNull(task4.getProject());
+    @Rule
+    public final InstantTaskExecutorRule mInstantTaskExecutorRule = new InstantTaskExecutorRule();
+
+    private final TaskRepository mTaskRepository = Mockito.mock(TaskRepository.class);
+    private final ProjectRepository mProjectRepository = Mockito.mock(ProjectRepository.class);
+    private final Executor mExecutor = Mockito.mock(Executor.class);
+
+    private final MutableLiveData<List<Task>> tasksMutableLiveData = new MutableLiveData<>();
+
+    private MainViewModel mMainViewModel;
+
+    @Before
+    public void setUp() {
+        Mockito.doReturn(tasksMutableLiveData).when(mTaskRepository).getTasks();
+        mMainViewModel = new MainViewModel(mTaskRepository, mProjectRepository, mExecutor);
+
     }
 
     @Test
-    public void test_az_comparator() {
-        final Task task1 = new Task(1, 1, "aaa", 123);
-        final Task task2 = new Task(2, 2, "zzz", 124);
-        final Task task3 = new Task(3, 3, "hhh", 125);
+    public void nominal_case() throws InterruptedException {
+        // Given
+        tasksMutableLiveData.setValue(getDefaultTasks());
 
-        final ArrayList<Task> tasks = new ArrayList<>();
-        tasks.add(task1);
-        tasks.add(task2);
-        tasks.add(task3);
-        Collections.sort(tasks, new Task.TaskAZComparator());
+        // When
+        List<MainViewState> result = LiveDataTestUtil.getOrAwaitValue(mMainViewModel.getAllTaskLiveData());
 
-        assertSame(tasks.get(0), task1);
-        assertSame(tasks.get(1), task3);
-        assertSame(tasks.get(2), task2);
+
+        // Then
+        assertEquals(result, getDefaultMainViewState());
+
     }
 
     @Test
-    public void test_za_comparator() {
-        final Task task1 = new Task(1, 1, "aaa", 123);
-        final Task task2 = new Task(2, 2, "zzz", 124);
-        final Task task3 = new Task(3, 3, "hhh", 125);
+    public void az_comparator() throws InterruptedException {
+        // Given
 
-        final ArrayList<Task> tasks = new ArrayList<>();
-        tasks.add(task1);
-        tasks.add(task2);
-        tasks.add(task3);
-        Collections.sort(tasks, new Task.TaskZAComparator());
 
-        assertSame(tasks.get(0), task2);
-        assertSame(tasks.get(1), task3);
-        assertSame(tasks.get(2), task1);
+        // When
+
+
+
+        // Then
+
+
     }
 
     @Test
-    public void test_recent_comparator() {
-        final Task task1 = new Task(1, 1, "aaa", 123);
-        final Task task2 = new Task(2, 2, "zzz", 124);
-        final Task task3 = new Task(3, 3, "hhh", 125);
+    public void za_comparator() throws InterruptedException {
+        // Given
 
-        final ArrayList<Task> tasks = new ArrayList<>();
-        tasks.add(task1);
-        tasks.add(task2);
-        tasks.add(task3);
-        Collections.sort(tasks, new Task.TaskRecentComparator());
 
-        assertSame(tasks.get(0), task3);
-        assertSame(tasks.get(1), task2);
-        assertSame(tasks.get(2), task1);
+        // When
+
+
+
+        // Then
+
+
     }
 
     @Test
-    public void test_old_comparator() {
-        final Task task1 = new Task(1, 1, "aaa", 123);
-        final Task task2 = new Task(2, 2, "zzz", 124);
-        final Task task3 = new Task(3, 3, "hhh", 125);
+    public void recent_comparator() throws InterruptedException {
+        // Given
 
-        final ArrayList<Task> tasks = new ArrayList<>();
-        tasks.add(task1);
-        tasks.add(task2);
-        tasks.add(task3);
-        Collections.sort(tasks, new Task.TaskOldComparator());
 
-        assertSame(tasks.get(0), task1);
-        assertSame(tasks.get(1), task2);
-        assertSame(tasks.get(2), task3);
+        // When
+
+
+
+        // Then
+
+
     }
+
+    @Test
+    public void old_comparator() throws InterruptedException {
+        // Given
+
+
+        // When
+
+
+
+        // Then
+
+
+    }
+
+    @Test
+    public void create_task() throws InterruptedException {
+        // Given
+
+
+        // When
+
+
+
+        // Then
+
+
+    }
+
+    @Test
+    public void delete_task() throws InterruptedException {
+        // When
+        mMainViewModel.deleteTask(new MainViewState(1, "my first task", 1));
+
+
+
+        // Then
+        Mockito.verify(mTaskRepository).deleteTask(new Task( 1, "my first task", 123));
+
+    }
+
+
+    private List<Task> getDefaultTasks() {
+        return Arrays.asList(
+                new Task( 1, "my first task", 123)
+                //new Task(2, 2, "my second task", 256),
+                //new Task(3, 3, "my third task", 825),
+                //new Task(4, 1, "my fourth task", 956)
+        );
+    }
+
+    private List<MainViewState> getDefaultMainViewState() {
+        return Arrays.asList(
+                new MainViewState(1, "my first task", 1)
+                //new MainViewState(2, "my second task", 2),
+                //new MainViewState(3, "my third task", 3),
+                //new MainViewState(4, "my fourth task", 1)
+        );
+    }
+
 }

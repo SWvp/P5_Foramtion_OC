@@ -25,13 +25,14 @@ public class MainViewModel extends ViewModel {
     @NonNull
     private final ProjectRepository mProjectRepository;
     private final Executor mExecutor;
+    private Task taskToDelete;
+
+    private long taskIdViewState;
+    private List<Task> taskList;
 
     private final MediatorLiveData<List<MainViewState>> taskListMediatorLiveData = new MediatorLiveData<>();
 
-    private final MutableLiveData<SortMethod> azMutableLiveData = new MutableLiveData<>();
-    private final MutableLiveData<SortMethod> zaMutableLiveData = new MutableLiveData<>();
-    private final MutableLiveData<SortMethod> oldestFirstMutableLiveData = new MutableLiveData<>();
-    private final MutableLiveData<SortMethod> recentFirstMutableLiveData = new MutableLiveData<>();
+    private final MutableLiveData<SortMethod> sortedListMutableLiveData = new MutableLiveData<>();
 
 
     public MainViewModel(@NonNull TaskRepository taskRepository, @NonNull ProjectRepository projectRepository, Executor executor) {
@@ -44,77 +45,50 @@ public class MainViewModel extends ViewModel {
         taskListMediatorLiveData.addSource(taskListLiveData, new Observer<List<Task>>() {
             @Override
             public void onChanged(List<Task> task) {
-                combine(task, azMutableLiveData.getValue(), zaMutableLiveData.getValue(), oldestFirstMutableLiveData.getValue(), recentFirstMutableLiveData.getValue());
+                combine(task, sortedListMutableLiveData.getValue());
 
             }
         });
 
-        taskListMediatorLiveData.addSource(azMutableLiveData, new Observer<SortMethod>() {
+        taskListMediatorLiveData.addSource(sortedListMutableLiveData, new Observer<SortMethod>() {
             @Override
-            public void onChanged(SortMethod az) {
-                combine(taskListLiveData.getValue(), az, zaMutableLiveData.getValue(), oldestFirstMutableLiveData.getValue(), recentFirstMutableLiveData.getValue());
+            public void onChanged(SortMethod sortMethod) {
+                combine(taskListLiveData.getValue(), sortMethod);
 
             }
         });
-
-        taskListMediatorLiveData.addSource(zaMutableLiveData, new Observer<SortMethod>() {
-            @Override
-            public void onChanged(SortMethod za) {
-                combine(taskListLiveData.getValue(), azMutableLiveData.getValue(), za, oldestFirstMutableLiveData.getValue(), recentFirstMutableLiveData.getValue());
-
-            }
-        });
-
-        taskListMediatorLiveData.addSource(oldestFirstMutableLiveData, new Observer<SortMethod>() {
-            @Override
-            public void onChanged(SortMethod old) {
-                combine(taskListLiveData.getValue(), azMutableLiveData.getValue(), zaMutableLiveData.getValue(), old, recentFirstMutableLiveData.getValue());
-
-            }
-        });
-
-        taskListMediatorLiveData.addSource(recentFirstMutableLiveData, new Observer<SortMethod>() {
-            @Override
-            public void onChanged(SortMethod recent) {
-                combine(taskListLiveData.getValue(), azMutableLiveData.getValue(), zaMutableLiveData.getValue(), oldestFirstMutableLiveData.getValue(), recent);
-
-            }
-        });
-
-
     }
 
-    private void combine(@Nullable List<Task> tasks, @Nullable SortMethod az, @Nullable SortMethod za, @Nullable SortMethod old, @Nullable SortMethod recent) {
+    private void combine(@Nullable List<Task> tasks, @Nullable SortMethod sortMethod) {
 
-        if((az == null) && (za == null) && (old == null) && (recent == null)){
+        if(sortMethod == null){
             taskListMediatorLiveData.setValue(map(tasks));
 
-        }
+        }else {
+            switch (sortMethod){
 
-        else if(az != null){
-            Collections.sort(tasks, new Task.TaskAZComparator());
+                case ALPHABETICAL:
+                    Collections.sort(tasks, new Task.TaskAZComparator());
+                    break;
+                case ALPHABETICAL_INVERTED:
+                    Collections.sort(tasks, new Task.TaskZAComparator());
+                    break;
+                case RECENT_FIRST:
+                    Collections.sort(tasks, new Task.TaskOldComparator());
+                    break;
+                case OLD_FIRST:
+                    Collections.sort(tasks, new Task.TaskRecentComparator());
+                    break;
+                case NONE:
+                    break;
+            }
             taskListMediatorLiveData.setValue(map(tasks));
-
-        }
-        else if(za != null){
-            Collections.sort(tasks, new Task.TaskZAComparator());
-            taskListMediatorLiveData.setValue(map(tasks));
-
-        }
-        else if(old != null){
-            Collections.sort(tasks, new Task.TaskOldComparator());
-            taskListMediatorLiveData.setValue(map(tasks));
-
-        }
-        else if(recent != null){
-            Collections.sort(tasks, new Task.TaskRecentComparator());
-            taskListMediatorLiveData.setValue(map(tasks));
-
         }
     }
 
     private List<MainViewState> map(List<Task> tasks){
         List<MainViewState> result = new ArrayList<>();
+        taskList = tasks;
 
         for (Task task: tasks) {
 
@@ -129,37 +103,9 @@ public class MainViewModel extends ViewModel {
 
     }
 
-    public void azSort(SortMethod value){
-        azMutableLiveData.setValue(value);
-        zaMutableLiveData.setValue(null);
-        oldestFirstMutableLiveData.setValue(null);
-        recentFirstMutableLiveData.setValue(null);
+    public void sortMethod(SortMethod value){
+        sortedListMutableLiveData.setValue(value);
 
-
-    }
-    public void zaSort(SortMethod value) {
-        azMutableLiveData.setValue(null);
-        zaMutableLiveData.setValue(value);
-        oldestFirstMutableLiveData.setValue(null);
-        recentFirstMutableLiveData.setValue(null);
-
-
-
-    }
-
-    public void oldFirstSort(SortMethod value) {
-        azMutableLiveData.setValue(null);
-        zaMutableLiveData.setValue(null);
-        oldestFirstMutableLiveData.setValue(value);
-        recentFirstMutableLiveData.setValue(null);
-
-    }
-
-    public void recentFirstSort(SortMethod value) {
-        azMutableLiveData.setValue(null);
-        zaMutableLiveData.setValue(null);
-        oldestFirstMutableLiveData.setValue(null);
-        recentFirstMutableLiveData.setValue(value);
 
     }
 
@@ -169,12 +115,18 @@ public class MainViewModel extends ViewModel {
         });
     }
 
-    public void deleteTask(Task task) {
+    public void deleteTask(MainViewState task) {
+        taskIdViewState = task.getTaskId();
+        for (Task mTask: taskList){
+            if (mTask.getId() == taskIdViewState){
+                taskToDelete = mTask;
+            }
+        }
         mExecutor.execute(() -> {
-            this.mTaskRepository.deleteTask(task);
+            this.mTaskRepository.deleteTask(taskToDelete);
         });
     }
 
-    public LiveData<List<MainViewState>> getAllTask() {return taskListMediatorLiveData;}
+    public LiveData<List<MainViewState>> getAllTaskLiveData() {return taskListMediatorLiveData;}
 
 }

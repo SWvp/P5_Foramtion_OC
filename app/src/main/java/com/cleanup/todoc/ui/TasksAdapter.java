@@ -15,6 +15,7 @@ import com.cleanup.todoc.R;
 import com.cleanup.todoc.model.Project;
 import com.cleanup.todoc.model.Task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,10 +51,12 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
      *
      * @param tasks the list of tasks the adapter deals with to set
      */
-    void updateTasks(@NonNull final List<MainViewState> tasks) {
+
+    public void setTasks(List<MainViewState> tasks){
         this.tasks = tasks;
         notifyDataSetChanged();
     }
+
 
     @NonNull
     @Override
@@ -65,6 +68,7 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
     @Override
     public void onBindViewHolder(@NonNull TaskViewHolder taskViewHolder, int position) {
         taskViewHolder.bind(tasks.get(position));
+
     }
 
     @Override
@@ -72,10 +76,6 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         return tasks.size();
     }
 
-    public void setTasks(List<MainViewState> tasks){
-        this.tasks = tasks;
-        notifyDataSetChanged();
-    }
 
     /**
      * Listener for deleting tasks
@@ -84,9 +84,9 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
         /**
          * Called when a task needs to be deleted.
          *
-         * @param task the task that needs to be deleted
+         * @param taskToDelete the task that needs to be deleted
          */
-        void onDeleteTask(Task task);
+        void onDeleteTask(MainViewState taskToDelete);
     }
 
     /**
@@ -136,13 +136,10 @@ public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHold
             lblProjectName = itemView.findViewById(R.id.lbl_project_name);
             imgDelete = itemView.findViewById(R.id.img_delete);
 
-            imgDelete.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    final Object tag = view.getTag();
-                    if (tag instanceof Task) {
-                        TaskViewHolder.this.deleteTaskListener.onDeleteTask((Task) tag);
-                    }
+            imgDelete.setOnClickListener(view -> {
+                final Object tag = view.getTag();
+                if (tag instanceof MainViewState) {
+                    TaskViewHolder.this.deleteTaskListener.onDeleteTask((MainViewState) tag);
                 }
             });
         }

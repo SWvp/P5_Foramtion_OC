@@ -31,7 +31,7 @@ public class ViewModelFactory implements ViewModelProvider.Factory{
     @NonNull
     @Override
     public <T extends ViewModel> T create(Class<T> modelClass) {
-        if (modelClass.isAssignableFrom(MainActivity.class)) {
+        if (modelClass.isAssignableFrom(MainViewModel.class)) {
             return (T) new MainViewModel(mTaskRepository, mProjectRepository, mExecutor);
 
         }
