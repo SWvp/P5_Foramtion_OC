@@ -7,9 +7,11 @@ import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * <p>Model for the tasks of the application.</p>
@@ -55,6 +57,13 @@ public class Task {
      */
 
     public Task(long projectId, @NonNull String name, long creationTimestamp) {
+        this.setProjectId(projectId);
+        this.setName(name);
+        this.setCreationTimestamp(creationTimestamp);
+    }
+    @Ignore
+    public Task(long id, long projectId, @NonNull String name, long creationTimestamp) {
+        this.id = id;
         this.setProjectId(projectId);
         this.setName(name);
         this.setCreationTimestamp(creationTimestamp);
@@ -163,5 +172,22 @@ public class Task {
             return (int) (right.creationTimestamp - left.creationTimestamp);
 
         }
+    }
+
+    // For unit tests
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Task task = (Task) o;
+        return id == task.id &&
+                projectId == task.projectId &&
+                creationTimestamp == task.creationTimestamp &&
+                name.equals(task.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, projectId, name, creationTimestamp);
     }
 }

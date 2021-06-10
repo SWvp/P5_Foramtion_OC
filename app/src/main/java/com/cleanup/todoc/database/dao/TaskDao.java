@@ -20,7 +20,7 @@ public interface TaskDao {
     @Insert
     void insertTask(Task task);
 
-    @Delete
-    void deleteTask(Task task);
+    @Query("DELETE FROM Tasks WHERE id = :taskId")
+    void deleteTask(long taskId);
 
 }

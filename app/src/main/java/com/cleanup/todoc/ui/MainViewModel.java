@@ -25,10 +25,7 @@ public class MainViewModel extends ViewModel {
     @NonNull
     private final ProjectRepository mProjectRepository;
     private final Executor mExecutor;
-    private Task taskToDelete;
 
-    private long taskIdViewState;
-    private List<Task> taskList;
 
     private final MediatorLiveData<List<MainViewState>> taskListMediatorLiveData = new MediatorLiveData<>();
 
@@ -88,7 +85,6 @@ public class MainViewModel extends ViewModel {
 
     private List<MainViewState> map(List<Task> tasks){
         List<MainViewState> result = new ArrayList<>();
-        taskList = tasks;
 
         for (Task task: tasks) {
 
@@ -116,14 +112,8 @@ public class MainViewModel extends ViewModel {
     }
 
     public void deleteTask(MainViewState task) {
-        taskIdViewState = task.getTaskId();
-        for (Task mTask: taskList){
-            if (mTask.getId() == taskIdViewState){
-                taskToDelete = mTask;
-            }
-        }
         mExecutor.execute(() -> {
-            this.mTaskRepository.deleteTask(taskToDelete);
+            this.mTaskRepository.deleteTask(task.getTaskId());
         });
     }
 
